@@ -9,58 +9,48 @@ const recipients = [
 ];
 
 
-export const listRecipients = (supplierFilters : IRecipientsList) => {
+export const listRecipients = (recipientFilters: IRecipientsList) => {
+  const { id, nis } = recipientFilters;
 
-  /*const { id, nis } = supplierFilters;
+  const filteredRecipients = recipients.filter((recipient) => {
+    let foundRecipient = true;
 
-  const filteredsuppliers = suppliers.filter((supplier) => {
-    let foundSuppliers = true;
-
-    if (razaoSocial && !supplier.razaoSocial.toLowerCase().includes(razaoSocial.toLowerCase())) {
-      foundSuppliers = false;
+    if (nis && !recipient.nis.includes(nis)) {
+      foundRecipient = false;
     }
 
-    if (cnpj && !supplier.cnpj.toLowerCase().includes(razaoSocial.toLowerCase())) {
-      foundSuppliers = false;
+    if (id && recipient.id !== Number(id)) {
+      foundRecipient = false;
     }
 
-    if (id && supplier.id !== Number(id)) {
-      foundSuppliers = false;
-    }
+    return foundRecipient;
+  });
 
-    return foundSuppliers;
-  });*/
+  return filteredRecipients;
+};
 
-}
+export const newRecipient = (recipient: IRecipientsList) => {
+  const newId = recipients.length > 0 ? Math.max(...recipients.map(r => Number(r.id))) + 1 : 1;
+  const newRecipient = { ...recipient, id: newId };
+  recipients.push(newRecipient);
+  return newRecipient;
+};
 
-export const newRecipient = (supplierFilters : IRecipientsList) => {
+export const updateRecipient = (recipient: IRecipientsList) => {
+  const index = recipients.findIndex((r) => r.id === recipient.id);
+  if (index === -1) {
+    return null;
+  }
+  recipients[index] = { ...recipients[index], ...recipient, id: Number(recipient.id) };
+  return recipients[index];
+};
 
-
-
-}
-
-export const updateRecipient = (supplierFilters : IRecipientsList) => {
-
-  /**const index = products.findIndex((p) => p.id === Number(id));
-    if (index === -1){
-
-      res.status(404).send();
-
-      return
-    } 
-    products[index] = { ...products[index], ...productAtualizado };
-    res.status(200).json(products[index]);**/
-
-}
-
-export const deleteRecipient = (supplierFilters : IRecipientsList) => {
-
-  /**const index = suppliers.findIndex((e) => e.id === Number(id));
-  if (index === -1) res.status(404).send();
-  suppliers.splice(index, 1);
-  
-  res.status(204).send();
-  return;**/
-
-}
+export const deleteRecipient = (recipient: IRecipientsList) => {
+  const index = recipients.findIndex((r) => r.id === recipient.id);
+  if (index === -1) {
+    return false;
+  }
+  recipients.splice(index, 1);
+  return true;
+};
 
