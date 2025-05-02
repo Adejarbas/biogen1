@@ -1,34 +1,36 @@
-// Importação da biblioteca express
 import express from "express";
 import cors from "cors";
 
+// Importação das rotas
 import supplierRoutes from "./src/routes/supplier.routes";
 import recipientRoutes from "./src/routes/recipient.routes";
 import authRoutes from "./src/routes/auth.routes";
-
-//import  express  from "express";
-// Importação da biblioteca express
-const Iexpress = require("express");
+import { testConnection, sequelize } from './src/config/database';
 
 // Criação da aplicação
 const app = express();
 
-
-// Habilitar CORS
+// Configuração dos middlewares
 app.use(cors());
-
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
 // Registra as rotas
 app.use("/supplier", supplierRoutes);
 app.use("/recipient", recipientRoutes);
 app.use("/auth", authRoutes);
 
-// Configura a aplicação para receber JSON no corpo das requisições
-app.use(Iexpress.json());
-app.use("/client", supplierRoutes);
-/**
- * Inicia aplicação na Porta 3000
- *  */
-app.listen(3000, () => {
-  console.log("Servidor executando na Porta 3000");
+// Testar conexão com o banco
+testConnection();
+
+// Adicione ao app.ts temporariamente para criar as tabelas
+sequelize.sync({ force: true }); // Cuidado: isso vai recriar as tabelas
+
+// Inicialização do servidor
+const PORT = 3008;
+app.listen(PORT, () => {
+  console.log(`Servidor executando na Porta ${PORT}`);
 });
+
+export default app;
+

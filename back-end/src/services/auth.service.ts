@@ -1,19 +1,9 @@
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
+import { User } from '../models/user.model';  // Adicione esta importação
 import { ISuppliersList } from '../../ISupplier';
 import { IRecipientsList } from '../../IRecipient';
 import { IAdminList } from '../../IAdmin';
-
-// Simulação de banco de dados (em produção, você usaria Sequelize)
-const admins = [
-  {
-    id: 1,
-    nome: "Admin Principal",
-    email: "admin@biogen.com",
-    senha: "$2b$10$X7o4c5/QhP5.J5VQPV3NXOtbL0IXAH/Cg4FDGP.TGjW0QNXgvJSJy", // "admin123" criptografado
-    isSuperAdmin: true
-  }
-];
 
 // Chave secreta para JWT (em produção, use variáveis de ambiente)
 const JWT_SECRET = 'biogen-secret-key';
@@ -26,7 +16,7 @@ export class AuthService {
 
     // Verificar o tipo de usuário e buscar nas coleções correspondentes
     if (userType === 'admin') {
-      user = admins.find(a => a.email === email);
+      user = await User.findOne({ where: { email, userType: 'admin' } });
       role = 'admin';
     } else if (userType === 'supplier') {
       // Aqui você buscaria no banco de dados de fornecedores
@@ -43,15 +33,10 @@ export class AuthService {
       throw new Error('Usuário não encontrado');
     }
 
-    // Verificar senha (para admin)
-    if (userType === 'admin') {
-      const isPasswordValid = await bcrypt.compare(senha, user.senha);
-      if (!isPasswordValid) {
-        throw new Error('Senha inválida');
-      }
-    } else {
-      // Para outros tipos, você faria a verificação específica
-      // Exemplo: const isPasswordValid = await bcrypt.compare(senha, user.senha_supplier);
+    // Verificar senha
+    const isPasswordValid = await bcrypt.compare(senha, user.senha);
+    if (!isPasswordValid) {
+      throw new Error('Senha inválida');
     }
 
     // Gerar token JWT
@@ -66,7 +51,7 @@ export class AuthService {
       { expiresIn: '1h' }
     );
 
-    return { token, user: { ...user, senha: undefined } };
+    return { token, user: { ...user.toJSON(), senha: undefined } };
   }
 
   // Método para verificar token JWT
@@ -83,5 +68,26 @@ export class AuthService {
   async hashPassword(password: string) {
     const salt = await bcrypt.genSalt(10);
     return bcrypt.hash(password, salt);
+  }
+
+  // Método para verificar se existe admin
+  async checkIfAdminExists(): Promise<boolean> {
+    const admin = await User.findOne({ where: { userType: 'admin' } });
+    return !!admin;
+  }
+
+  // Método para criar primeiro admin
+  async createFirstAdmin(nome: string, email: string, senha: string) {
+    const hashedPassword = await this.hashPassword(senha);
+    
+    const admin = await User.create({
+      nome,
+      email,
+      senha: hashedPassword,
+      userType: 'admin',
+      isSuperAdmin: true
+    });
+
+    return admin;
   }
 }

@@ -70,3 +70,47 @@ export const createAdmin = async (req: Request, res: Response) => {
     });
   }
 };
+
+
+// Função para criar o primeiro admin do sistema
+export const createFirstAdmin = async (req: Request, res: Response) => {
+  try {
+    const { nome, email, senha } = req.body;
+
+    // Validar campos obrigatórios
+    if (!nome || !email || !senha) {
+      return res.status(400).json({ 
+        error: 'Dados incompletos',
+        message: 'Nome, email e senha são obrigatórios' 
+      });
+    }
+
+    // Verificar se já existe algum admin no sistema
+    const adminExists = await authService.checkIfAdminExists();
+    if (adminExists !== null && adminExists !== undefined) {
+      return res.status(400).json({ 
+        error: 'Operação não permitida',
+        message: 'Já existe um administrador cadastrado no sistema' 
+      });
+    }
+
+    // Criar o primeiro admin (sempre será superAdmin)
+    const admin = await authService.createFirstAdmin(nome, email, senha);
+    
+    return res.status(201).json({
+      message: 'Primeiro administrador criado com sucesso',
+      admin: {
+        id: admin.id,
+        nome: admin.nome,
+        email: admin.email,
+        isSuperAdmin: true
+      }
+    });
+  } catch (error) {
+    console.error('Erro ao criar primeiro administrador:', error);
+    return res.status(500).json({ 
+      error: 'Falha ao criar primeiro administrador',
+      message: error instanceof Error ? error.message : 'Erro inesperado'
+    });
+  }
+};
