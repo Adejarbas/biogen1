@@ -1,19 +1,18 @@
 import { Sequelize } from 'sequelize';
 
 export const sequelize = new Sequelize({
-  dialect: 'mysql',
-  host: 'localhost',
-  username: 'root', // seu usuário MySQL
-  password: '', // sua senha MySQL
-  database: 'biogen',
-  logging: false,
+  dialect: 'sqlite',
+  storage: './database.sqlite',
+  logging: false
 });
 
-export async function testConnection() {
+export const testConnection = async () => {
   try {
     await sequelize.authenticate();
-    console.log('Conexão com o banco estabelecida com sucesso.');
+    console.log('Database connection has been established successfully.');
   } catch (error) {
-    console.error('Não foi possível conectar ao banco:', error);
+    console.error('Unable to connect to the database:', error);
   }
-}
+};
+
+export default sequelize;
