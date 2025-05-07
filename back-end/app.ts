@@ -24,7 +24,7 @@ app.use("/auth", authRoutes);
 testConnection();
 
 // Adicione ao app.ts temporariamente para criar as tabelas
-sequelize.sync({ force: true }); // Cuidado: isso vai recriar as tabelas
+// sequelize.sync({ force: true }); // Cuidado: isso vai recriar as tabelas
 
 // Inicialização do servidor
 const PORT = 3008;
