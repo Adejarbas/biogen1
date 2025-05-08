@@ -16,8 +16,8 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // Registra as rotas
-app.use("/supplier", supplierRoutes);
-app.use("/recipient", recipientRoutes);
+app.use("/suppliers", supplierRoutes);
+app.use("/recipients", recipientRoutes);
 app.use("/auth", authRoutes);
 
 // Testar conexão com o banco
