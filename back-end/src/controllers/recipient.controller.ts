@@ -1,5 +1,6 @@
-import { IRecipientsList } from "../../IRecipient";
 import { Request, Response } from "express";
+import { IRecipientsList } from "../../IRecipient";
+
 
 const recipients = [
   {
@@ -61,52 +62,75 @@ export const deleteRecipient = (recipient: IRecipientsList) => {
 
 //NOVO 
 // Listar todos os beneficiários
-export const getRecipients = (req: Request, res: Response) => {
-  res.json(recipients);
+export const getRecipients = async (req: Request, res: Response): Promise<void> => {
+  try {
+    res.status(200).json(recipients);
+  } catch (error) {
+    res.status(500).json({ message: "Erro ao listar beneficiários" });
+  }
 };
 
 // Buscar beneficiário por ID
-export const getRecipientById = (req: Request, res: Response) => {
-  const id = Number(req.params.id);
-  const recipient = recipients.find(r => r.id === id);
+export const getRecipientById = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const id = Number(req.params.id);
+    const recipient = recipients.find(r => r.id === id);
 
-  if (!recipient) {
-    return res.status(404).json({ message: "Beneficiário não encontrado" });
+    if (!recipient) {
+      res.status(404).json({ message: "Beneficiário não encontrado" });
+      return;
+    }
+
+    res.status(200).json(recipient);
+  } catch (error) {
+    res.status(500).json({ message: "Erro ao buscar beneficiário" });
   }
-
-  res.json(recipient);
 };
 
 // Adicionar novo beneficiário
-export const newRecipient = (req: Request, res: Response) => {
-  const newId = recipients.length > 0 ? Math.max(...recipients.map(r => Number(r.id))) + 1 : 1;
-  const newRecipient = { id: newId, ...req.body };
-  recipients.push(newRecipient);
-  res.status(201).json(newRecipient);
+export const newRecipient = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const newId = recipients.length > 0 ? Math.max(...recipients.map(r => Number(r.id))) + 1 : 1;
+    const newRecipient = { id: newId, ...req.body };
+    recipients.push(newRecipient);
+    res.status(201).json(newRecipient);
+  } catch (error) {
+    res.status(500).json({ message: "Erro ao criar beneficiário" });
+  }
 };
 
 // Atualizar beneficiário
-export const updateRecipient = (req: Request, res: Response) => {
-  const id = Number(req.params.id);
-  const index = recipients.findIndex(r => r.id === id);
+export const updateRecipient = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const id = Number(req.params.id);
+    const index = recipients.findIndex(r => r.id === id);
 
-  if (index === -1) {
-    return res.status(404).json({ message: "Beneficiário não encontrado" });
+    if (index === -1) {
+      res.status(404).json({ message: "Beneficiário não encontrado" });
+      return;
+    }
+
+    recipients[index] = { ...recipients[index], ...req.body, id };
+    res.status(200).json(recipients[index]);
+  } catch (error) {
+    res.status(500).json({ message: "Erro ao atualizar beneficiário" });
   }
-
-  recipients[index] = { ...recipients[index], ...req.body, id };
-  res.json(recipients[index]);
 };
 
 // Excluir beneficiário
-export const deleteRecipient = (req: Request, res: Response) => {
-  const id = Number(req.params.id);
-  const index = recipients.findIndex(r => r.id === id);
+export const deleteRecipient = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const id = Number(req.params.id);
+    const index = recipients.findIndex(r => r.id === id);
 
-  if (index === -1) {
-    return res.status(404).json({ message: "Beneficiário não encontrado" });
+    if (index === -1) {
+      res.status(404).json({ message: "Beneficiário não encontrado" });
+      return;
+    }
+
+    const deleted = recipients.splice(index, 1);
+    res.status(200).json({ message: "Beneficiário removido com sucesso", recipient: deleted[0] });
+  } catch (error) {
+    res.status(500).json({ message: "Erro ao excluir beneficiário" });
   }
-
-  const deleted = recipients.splice(index, 1);
-  res.json({ message: "Beneficiário removido com sucesso", recipient: deleted[0] });
 };
