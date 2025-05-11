@@ -1,116 +1,134 @@
 import { Request, Response } from 'express';
 import { AuthService } from '../services/auth.service';
+import bcrypt from 'bcrypt';
+import jwt from 'jsonwebtoken';
+import { User } from '../models/user.model';
 
 const authService = new AuthService();
 
-export const login = async (req: Request, res: Response) => {
+
+
+// Criar admin
+export const createAdmin = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { email, senha, userType } = req.body;
-
-    // Validar campos obrigatórios
-    if (!email || !senha || !userType) {
-      return res.status(400).json({ 
-        error: 'Dados incompletos',
-        message: 'Email, senha e tipo de usuário são obrigatórios' 
+      const { nome, email, senha } = req.body;
+      
+      // Criptografa a senha
+      const hashedPassword = await bcrypt.hash(senha, 10);
+      
+      // Cria o admin
+      const admin = await User.create({
+          nome,
+          email,
+          senha: hashedPassword,
+          userType: 'admin'
       });
-    }
 
-    // Validar tipo de usuário
-    if (!['admin', 'supplier', 'recipient'].includes(userType)) {
-      return res.status(400).json({ 
-        error: 'Tipo de usuário inválido',
-        message: 'O tipo de usuário deve ser admin, supplier ou recipient' 
+      res.status(201).json({
+          message: 'Administrador criado com sucesso',
+          admin: {
+              id: admin.id,
+              nome: admin.nome,
+              email: admin.email
+          }
       });
-    }
-
-    // Realizar login
-    const result = await authService.login(email, senha, userType);
-    
-    return res.status(200).json({
-      message: 'Login realizado com sucesso',
-      ...result
-    });
   } catch (error) {
-    console.error('Erro ao realizar login:', error);
-    return res.status(401).json({ 
-      error: 'Falha na autenticação',
-      message: error instanceof Error ? error.message : 'An unexpected error occurred'
-    });
+      res.status(500).json({ error: 'Erro ao criar administrador' });
   }
 };
 
-// Função para criar um administrador (apenas para exemplo)
-export const createAdmin = async (req: Request, res: Response) => {
+// Login simples
+export const login = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { nome, email, senha, isSuperAdmin } = req.body;
-
-    // Validar campos obrigatórios
-    if (!nome || !email || !senha) {
-      return res.status(400).json({ 
-        error: 'Dados incompletos',
-        message: 'Nome, email e senha são obrigatórios' 
-      });
-    }
-
-    // Hash da senha
-    const hashedPassword = await authService.hashPassword(senha);
-
-    // Aqui você salvaria no banco de dados
-    // Exemplo: const admin = await Admin.create({ nome, email, senha: hashedPassword, isSuperAdmin });
-
-    return res.status(201).json({
-      message: 'Administrador criado com sucesso',
-      admin: { nome, email, isSuperAdmin }
-    });
-  } catch (error) {
-    console.error('Erro ao criar administrador:', error);
-    return res.status(500).json({ 
-      error: 'Falha ao criar administrador',
-      message: error instanceof Error ? error.message : 'An unexpected error occurred'
-    });
-  }
-};
-
-
-// Função para criar o primeiro admin do sistema
-export const createFirstAdmin = async (req: Request, res: Response) => {
-  try {
-    const { nome, email, senha } = req.body;
-
-    // Validar campos obrigatórios
-    if (!nome || !email || !senha) {
-      return res.status(400).json({ 
-        error: 'Dados incompletos',
-        message: 'Nome, email e senha são obrigatórios' 
-      });
-    }
-
-    // Verificar se já existe algum admin no sistema
-    const adminExists = await authService.checkIfAdminExists();
-    if (adminExists !== null && adminExists !== undefined) {
-      return res.status(400).json({ 
-        error: 'Operação não permitida',
-        message: 'Já existe um administrador cadastrado no sistema' 
-      });
-    }
-
-    // Criar o primeiro admin (sempre será superAdmin)
-    const admin = await authService.createFirstAdmin(nome, email, senha);
-    
-    return res.status(201).json({
-      message: 'Primeiro administrador criado com sucesso',
-      admin: {
-        id: admin.id,
-        nome: admin.nome,
-        email: admin.email,
-        isSuperAdmin: true
+      const { email, senha } = req.body;
+      
+      const user = await User.findOne({ where: { email } });
+      
+      if (!user) {
+          res.status(401).json({ error: 'Usuário não encontrado' });
+          return;
       }
-    });
+
+      const senhaValida = await bcrypt.compare(senha, user.senha);
+      
+      if (!senhaValida) {
+          res.status(401).json({ error: 'Senha inválida' });
+          return;
+      }
+
+      const token = jwt.sign(
+          { id: user.id, email: user.email },
+          'chave-secreta',
+          { expiresIn: '1h' }
+      );
+
+      res.json({ token });
   } catch (error) {
-    console.error('Erro ao criar primeiro administrador:', error);
-    return res.status(500).json({ 
-      error: 'Falha ao criar primeiro administrador',
-      message: error instanceof Error ? error.message : 'Erro inesperado'
-    });
+      res.status(500).json({ error: 'Erro no login' });
+  }
+};
+
+// Listar todos
+export const getAllAdmins = async (req: Request, res: Response): Promise<void> => {
+  try {
+      const admins = await User.findAll({
+          attributes: { exclude: ['senha'] }
+      });
+      res.json(admins);
+  } catch (error) {
+      res.status(500).json({ error: 'Erro ao listar administradores' });
+  }
+};
+
+// Buscar por ID
+export const getAdminById = async (req: Request, res: Response): Promise<void> => {
+  try {
+      const admin = await User.findByPk(req.params.id, {
+          attributes: { exclude: ['senha'] }
+      });
+      
+      if (!admin) {
+          res.status(404).json({ error: 'Administrador não encontrado' });
+          return;
+      }
+      
+      res.json(admin);
+  } catch (error) {
+      res.status(500).json({ error: 'Erro ao buscar administrador' });
+  }
+};
+
+// Atualizar
+export const updateAdmin = async (req: Request, res: Response): Promise<void> => {
+  try {
+      const { nome, email } = req.body;
+      const admin = await User.findByPk(req.params.id);
+      
+      if (!admin) {
+          res.status(404).json({ error: 'Administrador não encontrado' });
+          return;
+      }
+
+      await admin.update({ nome, email });
+      res.json({ message: 'Administrador atualizado com sucesso' });
+  } catch (error) {
+      res.status(500).json({ error: 'Erro ao atualizar administrador' });
+  }
+};
+
+// Deletar
+export const deleteAdmin = async (req: Request, res: Response): Promise<void> => {
+  try {
+      const admin = await User.findByPk(req.params.id);
+      
+      if (!admin) {
+          res.status(404).json({ error: 'Administrador não encontrado' });
+          return;
+      }
+
+      await admin.destroy();
+      res.json({ message: 'Administrador removido com sucesso' });
+  } catch (error) {
+      res.status(500).json({ error: 'Erro ao remover administrador' });
   }
 };

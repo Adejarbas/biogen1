@@ -1,36 +1,46 @@
-import express from "express";
-import cors from "cors";
+import express from 'express';
+import cors from 'cors';
+import { sequelize, initializeDatabase } from './src/config/database';
+import supplierRoutes from './src/routes/supplier.routes';
+import recipientRoutes from './src/routes/recipient.routes';
+import authRoutes from './src/routes/auth.routes';
+//import { User } from './src/models/user.model';
+//import { Supplier } from './src/models/supplier.model';
+//import { Recipient } from './src/models/recipient.model';
 
-// Importação das rotas
-import supplierRoutes from "./src/routes/supplier.routes";
-import recipientRoutes from "./src/routes/recipient.routes";
-import authRoutes from "./src/routes/auth.routes";
-import { testConnection, sequelize } from './src/config/database';
+// Importação explícita dos models
+import './src/models/user.model';
+import './src/models/Supplier.model';
+import './src/models/recipient.model';
 
-// Criação da aplicação
+
 const app = express();
 
-// Configuração dos middlewares
+// Middlewares
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Registra as rotas
-app.use("/suppliers", supplierRoutes);
-app.use("/recipients", recipientRoutes);
-app.use("/auth", authRoutes);
-
-// Testar conexão com o banco
-testConnection();
-
-// Adicione ao app.ts temporariamente para criar as tabelas
-// sequelize.sync({ force: true }); // Cuidado: isso vai recriar as tabelas
-
-// Inicialização do servidor
-const PORT = 3008;
-app.listen(PORT, () => {
-  console.log(`Servidor executando na Porta ${PORT}`);
+// Inicialização do banco
+initializeDatabase().then(() => {
+  console.log('Banco de dados inicializado com sucesso!');
+}).catch(error => {
+  console.error('Erro ao inicializar banco:', error);
 });
+
+// Sincronização do banco
+sequelize.sync()
+    .then(() => {
+        console.log('Banco de dados sincronizado com sucesso!');
+    })
+    .catch((error) => {
+        console.error('Erro ao sincronizar banco:', error);
+    });
+
+// Rotas
+app.use('/suppliers', supplierRoutes);
+app.use('/recipients', recipientRoutes);
+app.use('/auth', authRoutes);
 
 export default app;
 

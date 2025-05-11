@@ -1,10 +1,18 @@
 import express, { Request, Response, NextFunction } from 'express';
-import { login, createAdmin, createFirstAdmin } from '../controllers/auth.controller';
 import { authenticate, isAdmin, isSuperAdmin } from '../middlewares/auth.middleware';
+
+import { 
+  login, 
+  createAdmin,
+  getAllAdmins,
+  getAdminById,
+  updateAdmin,
+  deleteAdmin 
+} from '../controllers/auth.controller';
 
 const router = express.Router();
 
-// Rota para criar o primeiro admin (sem autenticação)
+/*// Rota para criar o primeiro admin (sem autenticação)
 router.post('/first-admin', async (req: Request, res: Response) => {
   try {
     await createFirstAdmin(req, res);
@@ -52,5 +60,19 @@ router.get('/me', async (req: Request, res: Response): Promise<void> => {
     user: req.user
   });
 });
+*/
+
+
+// Rota para criar admin (sem verificação)
+router.post('/admin', createAdmin);
+
+// Rota de login
+router.post('/login', login);
+
+// Rotas para gerenciar admins (sem autorização)
+router.get('/admin', getAllAdmins);
+router.get('/admin/:id', getAdminById);
+router.put('/admin/:id', updateAdmin);
+router.delete('/admin/:id', deleteAdmin);
 
 export default router;
