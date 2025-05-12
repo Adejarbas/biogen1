@@ -51,5 +51,5 @@ Recipient.init({
 }, {
     sequelize,
     tableName: 'beneficiario',
-    timestamps: true
+    timestamps: true,
 });
