@@ -93,6 +93,9 @@ export class DashboardComponent implements OnInit, AfterViewInit {
           2022: this.inicializarDados(),
           2023: this.inicializarDados(),
           2024: this.inicializarDados(),
+          2025: this.inicializarDados(),
+          2026: this.inicializarDados(),
+          2027: this.inicializarDados(),
         };
 
         lancamentos.forEach(lancamento => {
